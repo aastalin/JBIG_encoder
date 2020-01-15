@@ -6,8 +6,8 @@
 
 #include "jbig.h"
 
-#define WIDTH 8
-#define HEIGHT 4
+#define WIDTH 16
+#define HEIGHT 16
 
 static int total_len;
 static void data_out(unsigned char *start, size_t len, void *file)
@@ -190,10 +190,22 @@ int main(int argc, char **argv)
     size_t size = ((WIDTH + 7) / 8) * HEIGHT;
     img = (unsigned char *) malloc( size*sizeof(unsigned char) );
 
+    if( argc < 2 )
+    {
+        /* Testing different pattern */
+        // p(white)=p(black)=0.5
+        combination(WIDTH*HEIGHT, WIDTH*HEIGHT*0.5, img, size);
+    }
+    // user set pattern
+    else if( argc==int(size+2) )
+    {
+        for( size_t i=0; i< size; i++ )
+        {
+            img[i] = atoi(argv[i+1]);
+        }
+        encodeJBIG(img, size, JBG_DELAY_AT, 0, 0, WIDTH, 0, argv[1+size] );
+    }
 
-    /* Testing different pattern */
-    // p(white)=p(black)=0.5
-    combination(WIDTH*HEIGHT, WIDTH*HEIGHT*0.5, img, size);
     free(img);
     return 0;
 }
