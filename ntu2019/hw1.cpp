@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
@@ -175,6 +176,103 @@ void combination(int n, int m, unsigned char *img, size_t size)
     std::cout << "maximal encoded size is " << max_value << std::endl;
 }
 
+bool seed_comp(double i, double j){ return (i<j); }
+
+void rand_sample(unsigned char *img, size_t size, size_t times)
+{
+    int  out_idx = 0;
+    char out_name[20];
+
+    int max_value = 0;
+    int min_value = 1000;
+
+    unsigned seed;
+    seed = (unsigned)time(NULL);
+    srand(seed);
+
+    size_t m = WIDTH*HEIGHT*0.5;
+
+    for( size_t t=0; t<times; t++ )
+    {
+        std::vector<double> list;
+        std::vector<double> temp;
+
+        for( size_t i=0; i<WIDTH*HEIGHT; i++ )
+        {
+            double v = ( (double)rand() / (RAND_MAX) ) ;
+            list.push_back(v);
+            temp.push_back(v);
+        }
+
+        std::sort( temp.begin(), temp.end(), seed_comp);
+        double threshold = temp[m];
+
+        // generate img
+        size_t idx = 0;
+        for( size_t l=0; l<HEIGHT; l++ )
+        {
+            for( size_t k=0; k<((WIDTH+7)/8); k++ )
+            {
+                // parse binary into char
+                unsigned char c = 0;
+                for( size_t h=k*8; h<(k+1)*8 && h<WIDTH; h++ )
+                {
+                    if( list[l*WIDTH+h]<threshold )
+                        c |= 1 << (h-k*8);
+                }
+
+                img[idx] = c;
+                idx ++;
+            }
+        }
+
+        total_len = 0;
+        // opitons=JBG_DELAY_AT, order=0, layers=0, l0=16, mx=0
+        encodeJBIG(img, size, JBG_DELAY_AT, 0, 0, WIDTH, 0, NULL);
+
+
+        if( total_len<min_value )
+        {
+            min_value = total_len;
+
+            for( size_t l=0; l<HEIGHT; l++ )
+            {
+                for( size_t k=0; k<WIDTH; k++ )
+                {
+                    if( list[l*WIDTH+k]<threshold ) std::cout << "#" ;
+                    else std::cout << "-";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl << "LEN=" << total_len << std::endl << std::endl;
+
+            sprintf( out_name, "out_%03d.jbg", out_idx);
+            encodeJBIG(img, size, JBG_DELAY_AT, 0, 0, WIDTH, 0, out_name);
+            out_idx ++;
+        }
+        else if( total_len>max_value )
+        {
+            max_value = total_len;
+
+            for( size_t l=0; l<HEIGHT; l++ )
+            {
+                for( size_t k=0; k<WIDTH; k++ )
+                {
+                    if( list[l*WIDTH+k]<threshold ) std::cout << "#" ;
+                    else std::cout << "-";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl << "LEN=" << total_len << std::endl << std::endl;
+            sprintf( out_name, "out_%03d.jbg", out_idx);
+            encodeJBIG(img, size, JBG_DELAY_AT, 0, 0, WIDTH, 0, out_name);
+            out_idx ++;
+        }
+    }
+    std::cout << "minimal encoded size is " << min_value << std::endl;
+    std::cout << "maximal encoded size is " << max_value << std::endl;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -196,9 +294,13 @@ int main(int argc, char **argv)
         // p(white)=p(black)=0.5
         combination(WIDTH*HEIGHT, WIDTH*HEIGHT*0.5, img, size);
     }
-    // user set pattern
+    else if( argc < 3 )
+    {
+        rand_sample(img, size, atoi(argv[1]));
+    }
     else if( argc==int(size+2) )
     {
+        // user set pattern
         for( size_t i=0; i< size; i++ )
         {
             img[i] = atoi(argv[i+1]);
