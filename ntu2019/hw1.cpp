@@ -7,7 +7,7 @@
 #include "jbig.h"
 
 #define WIDTH 8
-#define HEIGHT 8
+#define HEIGHT 4
 
 static int total_len;
 static void data_out(unsigned char *start, size_t len, void *file)
